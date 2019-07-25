@@ -53,6 +53,7 @@ class AutoLoadOne
     public $logStat = '';
     public $result = '';
     public $cli = '';
+    public $linuxOS = '';
     public $logged = false;
     public $current = '';
     public $t1 = 0;
@@ -437,6 +438,7 @@ eot;
                 );
                 $this->savefile = (@$_POST['savefile']) ? @$_POST['savefile'] : $this->savefile;
                 $this->savefileName = (@$_POST['savefileName']) ? @$_POST['savefileName'] : $this->savefileName;
+                $this->linuxOS = (@$_POST['linuxOS']) ? @$_POST['linuxOS'] : $this->linuxOS;
                 $this->stop = @$_POST['stop'];
                 $ok = $this->saveParam();
                 if ($ok === false) {
@@ -563,6 +565,7 @@ function {{tempname}}__loadIfExists($filename, $key)
 }
 
 spl_autoload_register(function ($class_name) {
+    {{nobackslash}}$class_name = str_replace("\\", DIRECTORY_SEPARATOR, $class_name);
     {{tempname}}__auto($class_name);
 });
 // autorun
@@ -571,6 +574,9 @@ spl_autoload_register(function ($class_name) {
 EOD;
         $custom = '';
         foreach ($namespacesAlt as $k => $v) {
+            if ($this->linuxOS) {
+                $k = str_replace('\\', '/', $k);
+            }
             $custom .= "\t'$k' => '$v',\n";
         }
         if ($custom != '') {
@@ -579,6 +585,9 @@ EOD;
         $include = '';
 
         foreach ($namespaces as $k => $v) {
+            if ($this->linuxOS) {
+                $k = str_replace('\\', '/', $k);
+            }
             $include .= "\t'$k' => '$v',\n";
         }
         $include = rtrim($include, ",\n");
@@ -599,6 +608,7 @@ EOD;
         $template = str_replace('{{include}}', $include, $template);
         $template = str_replace('{{includeabsolute}}', $includeAbsolute, $template);
         $template = str_replace('{{tempname}}', uniqid('s'), $template);
+        $template = ($this->linuxOS) ? str_replace('{{nobackslash}}', '', $template) : str_replace('{{nobackslash}}', '//', $template);
 
         $template = str_replace('{{autorun}}', $autorun, $template);
         $template = str_replace('{{version}}', $this::VERSION, $template);
@@ -1372,6 +1382,14 @@ TEM1;
                       <textarea  class="form-control" readonly rows="3" >{{cli}}</textarea>
                     </div>
                   </div>                  
+                  <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <div class="checkbox">
+                            <label>
+                            <input type="checkbox" name="linuxOS" value="1">Linux OS (Change directory separator on namespaces)</label>
+                        </div>                      
+                    </div>
+                  </div>
                   <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
                       <button type="submit" name="button" value="1" class="btn btn-primary">Generate</button>
